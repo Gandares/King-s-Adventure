@@ -1,24 +1,31 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerController : MonoBehaviour
 {
 
+    public delegate void openChest();
+    public event openChest OnOpenChest;
     private Vector3 spawnPoint;
     private float speed = 8f;
     private float jump = 900f;
+    private bool canAttack = false;
     private float gravityScaleFalling = 4f;
     private float gravityScaleJumping = 2f;
+    public LayerMask Ground;
     private Rigidbody2D rb;
-    private SpriteRenderer sr;
     private Animator a;
     private bool cantMove = false;
+    private bool canJump = true;
+    private bool isOnPlat;
+    private Rigidbody2D platRB;
     public GameObject TextSign;
+    public GameObject TextEntry;
     // Start is called before the first frame update
     void Start()
     {
-        sr = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
         a = GetComponent<Animator>();
         spawnPoint = new Vector3(-6.71f, 1.75f, 0f);
@@ -29,21 +36,34 @@ public class PlayerController : MonoBehaviour
         if(!cantMove){
             float horizontal = Input.GetAxisRaw("Horizontal");
             if(horizontal < -0.001)
-                sr.flipX = true;
+                this.transform.rotation = Quaternion.Euler(0f,180f,0f);
             else if(horizontal > 0.001)
-                sr.flipX = false;
+                this.transform.rotation = Quaternion.Euler(0f,0f,0f);
 
             a.SetFloat("Speed", Mathf.Abs(horizontal));
 
             transform.position += new Vector3(horizontal, 0, 0) * Time.deltaTime * speed;
         }
+
+        if(Physics2D.Raycast(transform.position, transform.TransformDirection(Vector2.down), 1.85f, Ground))
+            canJump = true;
+        else
+            canJump = false;
+
+        if(Input.GetMouseButtonDown(0) && canAttack){
+            a.SetBool("Attack", true);
+        }
     }
 
     void FixedUpdate()
     {
-        if(!cantMove){
-            if(Input.GetButton("Jump") && Mathf.Abs(rb.velocity.y) < 0.001f)
+        if(!cantMove && canJump){
+            if(Input.GetButton("Jump") && Mathf.Abs(rb.velocity.y) < 0.01f)
                 rb.AddForce(new Vector2(0f, jump), ForceMode2D.Impulse);
+        }
+
+        if(isOnPlat){
+            rb.velocity += platRB.velocity;
         }
 
             a.SetFloat("High", rb.velocity.y);
@@ -70,6 +90,38 @@ public class PlayerController : MonoBehaviour
         if(other.gameObject.tag == "HouseSign"){
             TextSign.SetActive(true);
         }
+        
+        if(other.gameObject.tag == "HouseEntry"){
+            TextEntry.SetActive(true);
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D other) {
+
+        if(other.gameObject.tag == "HouseEntry"){
+            if(Input.GetKeyDown(KeyCode.E)){
+                this.transform.position = new Vector3(-70.3f,-3.35f,0f);
+            }
+        }
+
+        if(other.gameObject.tag == "HouseExit"){
+            if(Input.GetKeyDown(KeyCode.E)){
+                this.transform.position = new Vector3(31.82f,29.7f,0f);
+            }
+        }
+
+        if(other.gameObject.tag == "LevelExit"){
+            if(Input.GetKeyDown(KeyCode.E)){
+                SceneManager.LoadScene("Fin");
+            }
+        }
+
+        if(other.gameObject.tag == "Treasure"){
+            if(Input.GetKeyDown(KeyCode.E)){
+                OnOpenChest();
+                canAttack = true;
+            }
+        }
     }
 
     private void OnTriggerExit2D(Collider2D other) {
@@ -77,10 +129,30 @@ public class PlayerController : MonoBehaviour
         if(other.gameObject.tag == "HouseSign"){
             TextSign.SetActive(false);
         }
+
+        if(other.gameObject.tag == "HouseEntry"){
+            TextEntry.SetActive(false);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D other) {
+        if(other.gameObject.tag == "plat"){
+            platRB = other.gameObject.GetComponent<Rigidbody2D>();
+            isOnPlat = true;
+            Debug.Log("here");
+        }
+    }
+
+    private void OnCollisionExit2D(Collision2D other) {
+        if(other.gameObject.tag == "plat"){
+            isOnPlat = false;
+            platRB = null;
+            Debug.Log("There");
+        }
     }
 
     IEnumerator w8Animation(){
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
         this.transform.position = spawnPoint;
         a.SetBool("Dead", false);
         cantMove = false;

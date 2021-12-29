@@ -9,6 +9,11 @@ TagManager:
   - HouseSign
   - HouseText
   - HouseEntry
+  - Treasure
+  - HouseExit
+  - Attack
+  - plat
+  - LevelExit
   layers:
   - Default
   - TransparentFX
@@ -16,7 +21,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Ground
   - 
   - 
   - 
