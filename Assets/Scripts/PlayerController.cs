@@ -8,6 +8,8 @@ public class PlayerController : MonoBehaviour
 
     public delegate void openChest();
     public event openChest OnOpenChest;
+    public delegate void axisButton(float s1, float s2);
+    public event axisButton OnSetBgSpeed;
     private Vector3 spawnPoint;
     private float speed = 8f;
     private float jump = 900f;
@@ -15,6 +17,7 @@ public class PlayerController : MonoBehaviour
     private float gravityScaleFalling = 4f;
     private float gravityScaleJumping = 2f;
     public LayerMask Ground;
+    private float lastPositionX;
     private Rigidbody2D rb;
     private Animator a;
     private bool cantMove = false;
@@ -29,6 +32,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         a = GetComponent<Animator>();
         spawnPoint = new Vector3(-6.71f, 1.75f, 0f);
+        lastPositionX = this.transform.position.x;
     }
 
     // Update is called once per frame
@@ -43,6 +47,15 @@ public class PlayerController : MonoBehaviour
             a.SetFloat("Speed", Mathf.Abs(horizontal));
 
             transform.position += new Vector3(horizontal, 0, 0) * Time.deltaTime * speed;
+
+            if(transform.position.x > lastPositionX + 0.1)
+                OnSetBgSpeed(0.01f,0.04f);
+            else if(transform.position.x < lastPositionX - 0.1)
+                OnSetBgSpeed(-0.01f,-0.04f);
+            else if(transform.position.x < lastPositionX + 0.1 && transform.position.x > lastPositionX - 0.1)
+                OnSetBgSpeed(0f,0f);
+
+            lastPositionX = transform.position.x;
         }
 
         if(Physics2D.Raycast(transform.position, transform.TransformDirection(Vector2.down), 1.85f, Ground))
