@@ -7,7 +7,7 @@ public class Box : MonoBehaviour
 
 
     public Treasure t;
-    private bool canAttack = true;
+    private bool canAttack = false;
     public ParticleSystem p;
 
     void Start(){
